@@ -64,8 +64,13 @@ Offset2 = 84
 
 
 
- Goto Start0
- Goto Callib_compass
+Goto Start0                                                'GOTO TO THE BEGINNING OF THE PROGRAMM
+
+                                                            'SOME CALIBRATION RUTINES USED FOR VARIOUS COMPONETS
+                                                            'SUCH AS COMPASS, RGB SENSORS
+
+Goto Callib_compass                                         'COMPASS CALIBRATION
+                                                            'MAINLY NOT USED IN THE ROBOT MOVES
 
 
 
@@ -75,12 +80,6 @@ While Pinc.0 = 1
 Wend
 
 Goto Callib_red
-
-
-
-
-
-
 
 Anglef = 134
 Offset1 = 105
@@ -124,19 +123,22 @@ Callib_compass:
       Gosub Angles
       Print Round(angle)
       Wait 1
-   Loop
+   Loop                                                     'END OF CALIBRATION RUTINES
 
+
+
+                                                            '******    HERE STARTS THE ROBOT REACTIONS     ******
 
 Start0:
-   Factors = 3.5
-   Factorw = 5.5
-   Factore = 5
-   Reset Porte.3
-   While Pinc.0 = 1
+   Factors = 3.5                                            'RED SENSITIVITY FACTORS
+   Factorw = 5.5                                            'WEST DIRECTION COLOR FACTOR
+   Factore = 5                                              'EAST DIRECTION COLOR FACTOR
+   Reset Porte.3                                            'STOP RED LASER SCANNER
+   While Pinc.0 = 1                                         'WAIT UNTIL THE FRONT BUTTON IS PRESSED
    Wend
    Wait 1
-   Print "PRESS FRONT BUTTON OR"
-   Print "WRITE S TO SETUP ANGLES"
+   Print "PRESS FRONT BUTTON OR"                            'COMUNICATE WITH BLUETOOTH AND TERMINAL
+   Print "WRITE S TO SETUP ANGLES"                          'CHOOSE CALIBRATION
    Print "PRESS BACK BUTTON OR R"
    Print "TO RUN THE ROBOT"
    Print #3 , "PRESS FRONT BUTTON OR"
@@ -144,14 +146,14 @@ Start0:
    Print #3 , "PRESS BACK BUTTON OR R"
    Print #3 , "TO RUN THE ROBOT"
    While Pinc.0 = 1
-      Gosub Get_char
+      Gosub Get_char                                        'READ BLUETOOTH
       If B(1) = 83 Then Goto Xekina                         'S CHARACTER PRESSED
       If B(1) = 82 Or Pinl.6 = 0 Then Goto Moterakia        'R CHARACTER PRESSED'
       Waitms 200
    Wend
 
 Xekina:
-   Print "PRESS FRONT BUTTON OR"
+   Print "PRESS FRONT BUTTON OR"                            'DECIDE WHAT TO DO
    Print "WRITE A TO SETUP ANGLES"
    Print "PRESS BACK BUTTON OR"
    Print "WRITE R TO RUN THE ROBOT"
@@ -168,7 +170,7 @@ Xekina:
       Waitms 100
    Wend
 Start1:
-   Print "PUT ROBOT AT STARTING POSITION"
+   Print "PUT ROBOT AT STARTING POSITION"                   'CALIBRATE COMPASS  FOR SOUTH DIRECTION
    Print "PRESS FRONT BUTTON OR"
    Print "WRITE S TO SET SOUTH ANGLE"
    Print "ANGLE NO MORE THAN 100 DEGREES"
@@ -188,16 +190,16 @@ Start2:
 
    Goto Start2
 
-Start5:
-   Anglef = 0                                            '
-   For I = 1 To 20                                       '**********************     INITIALIZE    STARTING ANGLE    *************
+Start5:                                                     'START OF THE MAIN PROGRAMM
+   Anglef = 0                                               ''***********     INITIALIZE    STARTING ANGLE    *************
+   For I = 1 To 20                                          'CREATE THE ANGLE STARTING MEASURE
       Gosub Angles
       Anglef = Anglef + Angle
    Next I
-   Anglef = Anglef / 20
+   Anglef = Anglef / 20                                     'CALCULATE THE MEAN MEASURE
    Anglef = Round(anglef)
    Anglen = Anglef
-   Print "SOUTH ANGLE MEASURED " ; Anglen
+   Print "SOUTH ANGLE MEASURED " ; Anglen                   'CALIBRATE COMPASS FOR WEST DIRECTION
    Print "PUT ROBOT AT WEST DIRECTION"
    Print "DO NOT TURN THE COMPASS"
    Print "PRESS W NOW TO MEASURE IT"
@@ -211,26 +213,26 @@ Start5:
 
 Start4:
    Gosub Get_char
-   If Pinc.0 = 0 Then Goto Start6
-   If B(1) <> 87 Then Goto Start4                        '
+   If Pinc.0 = 0 Then Goto Start6                           'WAIT TO START
+   If B(1) <> 87 Then Goto Start4                           '
 Start6:
    For I = 1 To 20                                       '**********************     INITIALIZE    STARTING ANGLE    *************
       Gosub Angles
-      Anglef = Anglef + Angle
+      Anglef = Anglef + Angle                               'CALCULATE THE MEAN WEST MEASURE ANGLE
    Next I
    Anglef = Anglef / 20
    Anglef = Round(anglef)
    Anglew = Anglef - Anglen
    Print #3 , "WEST ANGLE MEASURED " ; Anglef
    Print "WEST ANGLE MEASURED " ; Anglef
-   Writeeeprom Anglen , 0
+   Writeeeprom Anglen , 0                                   'SAVE MEASURES
    Writeeeprom Anglew , 1
 
 
 '************************     MAIN PROGRAMM  ****************
 
 Moterakia:
-   Readeeprom Anglen , 0
+   Readeeprom Anglen , 0                                    'EVERYTHING FINISHED
    Anglef = Anglen
    Readeeprom Offset1 , 1
    Anglef = 140
@@ -239,26 +241,26 @@ Moterakia:
     'Goto Tnorth
 
 
-   If Anglef > 153 Or Offset1 > 110 Then
-      Print #3 , "WRONG DIRECTION SETUP"
+   If Anglef > 153 Or Offset1 > 110 Then                    'OUT OF LIMITS
+      Print #3 , "WRONG DIRECTION SETUP"                    'IF YOU CHOOSE WRONG DIRECTIONS THE ROBOT DOES NOT RUN
       Print "WRONG DIRECTION SETUP"
       Goto Start0
    End If
 
    Do
       Gosub Closeservo
-      waitms 200                                            'CLOSE HAND
-      Gosub Horizontal_home                                       'HORIZONTALLY
-      Gosub Vertical_home                                         'VERTICALY
-      Gosub Head_home                                             'PULL HEAD AT HOME POSITION
-      Gosub Head_stop                                             'STOP HEAD MOOVE
+      Waitms 200                                            'CLOSE COLLECTOR HAND
+      Gosub Horizontal_home                                 'GOTO HORIZONTALLY HOME
+      Gosub Vertical_home                                   'GOTO VERTICALY HOME
+      Gosub Head_home                                       'PULL HEAD AT HOME POSITION
+      Gosub Head_stop                                       'STOP HEAD MOOVE
 
 
-      Print #3 , "GOING SOUTH"
-      Print "GOING SOUTH"                                   '
+      Print #3 , "GOING SOUTH"                              'START RUNNING FORWARD SOUTH
+      Print "GOING SOUTH"
       Set Porte.3
-      waitms 200                                          'START LASER
-      Factor = factors
+      Waitms 200                                            'START LASER
+      Factor = Factors                                      'LOAD FACTORS
       Flag1 = 0
       Color2 = 0
       Length = 1
@@ -266,26 +268,26 @@ Moterakia:
       For I = 1 To 50                                       'RED DATABASE
          Gosub Diavase_red
       Next I
-                                                 '********************      RUN FORWARD SOUTH     ***************
+
       Synexeia:                                             '**************************    GOING SOUTH      ***********************
          Gosub Openservo
          Waitms 200
          Set Porte.3                                        'START LASER
          Point1 = 0
 
-         While Pinc.0 = 1
+         While Pinc.0 = 1                                   'GOING UNTIL REACHING THE END OF ROUTE
 
             Angle1 = Anglef
 
-            Rwheel = Speed
-            Lwheel = Speed + 100
-            Gosub Robot_forward
+            Rwheel = Speed                                  'SET THE WHEELS SPEED
+            Lwheel = Speed + 100                            'THE MOTORS ARE RUNNING IN STEPS
+            Gosub Robot_forward                             'FOR ACCURATE POSITIONING
             Waitms 6
-            Gosub Robot_stop
+            Gosub Robot_stop                                'AND MAXIMUM TORQUE
             Waitms 35
             Incr Bima
-            If Bima > 100 Then
-               Gosub Stop_check
+            If Bima > 100 Then                              'EVERY 100 STEPS WE CHECK THE DIRECTION OD THE ROBOT
+               Gosub Stop_check                             'IF WE FIND MISSMACH WE CORRECT IT
                Gosub Check_dir
                Bima = 0
             End If
@@ -300,21 +302,21 @@ Moterakia:
             'End If
             Print Flag1
 
-            If Flag1 > 3 Then
+            If Flag1 > 3 Then                               'WE CHECK THE LASER SCANNER FOR 3 CORRECT RED VIEWS
                Flag1 = 0
                Point1 = 0                                   'FOUND IT'
-               Gosub Elexe
-               Goto Synexeia
+               Gosub Elexe                                  'WE RUN THE RUTINES FOR FINAL FRUIT CHECK
+               Goto Synexeia                                'IF IT IS CORRECT IT COLLECTS IT
             End If
-
+                                                            'THE ROBOT HAS REACHED THE END OF SOUTH ROUTE AND HAS TO TURN TO THE RIGHT
          Wend
 
          'Reset Porte.3
          'End
 
       Back_steps:                                                '******************************      BACK TO NORTH 20 STEPS   **************
-         Print #3 , "BACK STEPS"
-         Print "BACK STEPS"
+         Print #3 , "BACK STEPS"                            'MAKE SOME BACK STEPS
+         Print "BACK STEPS"                                 'TURN OFF LASER
          Reset Porte.3
          Gosub Head_stop
          Rwheel = Speed
@@ -328,8 +330,8 @@ Moterakia:
  'End
       Turn_west:                                                 '*********************************   TURNING WEST    ************
          Print #3 , "TURNING WEST"
-         Print "TURNING WEST"
-         Reset Porte.3
+         Print "TURNING WEST"                               'ROTATE TO THE RIGHT
+         Reset Porte.3                                      'UNTIL THE WEST ANGLE IS REACHED
          Angle1 = Anglef + Offset1
          Rwheel = 110
          Lwheel = 110
@@ -337,7 +339,7 @@ Moterakia:
             Gosub Angles
             Gosub Robot_right
          Wend
-         Gosub Robot_stop
+         Gosub Robot_stop                                   'AFTER TURNING MAKE A FINAL CHECK OF THE WEST ANGLE
          Gosub Check_dir
 
 
@@ -370,7 +372,7 @@ Moterakia:
             Gosub Robot_stop
             Waitms 25
             Incr Bima
-            If Bima > 100 Then
+            If Bima > 100 Then                              'MAKE THE DIRECTION CORRECTIONS
                Gosub Stop_check
                Gosub Check_dir
                Bima = 0
@@ -384,14 +386,14 @@ Moterakia:
              ''  Point1 = 0
              '  Flag1 = 0
             'End If
-            Print Flag1
-            If Flag1 > 3 Then
+            Print Flag1                                     'CHECK IF IS FOUND
+            If Flag1 > 3 Then                               'MORE THAN 3 INDICATIONS SUPPOSE THAT IT IS FOUND
                Flag1 = 0
                Gosub Elexe
                Goto West_going
             End If                                          'FOUND IT'
 
-         Wend
+         Wend                                               'THE ROBOT REACHED THE END OF WEST ROUTE
 
 
          'Reset Porte.3
@@ -403,7 +405,7 @@ Moterakia:
 
          Reset Porte.3                                            '*******************    TURNING TO EAST   **************
          Factor = Factore
-         Gosub Closeservo
+         Gosub Closeservo                                   'MOVE THE HEAD TO HOME POSITION
          Waitms 200
          Point1 = 0
          Pos = 60
@@ -427,7 +429,7 @@ Moterakia:
          Bima = 0
 
          While Ping.0 = 0 And Ping.2 = 0                          '**********    RUN FORWARD EAST     ************
-            Rwheel = Speed
+            Rwheel = Speed                                  'GOING IN REVERCE SPEED
             Lwheel = Speed + 100
             Gosub Robot_reverse
             Waitms 6
@@ -435,7 +437,7 @@ Moterakia:
             Waitms 45
 
             Incr Bima
-            If Bima > 100 Then
+            If Bima > 100 Then                              'MAKE THE DIRECTION CORRECTIONS
                Gosub Stop_check
                Gosub Check_dir
                Bima = 0
@@ -457,19 +459,19 @@ Moterakia:
 
          Wend
 
-      Turn:
+      Turn:                                                 '*******************    FOUND FIRST BLACK LINE    **************
          Reset Porte.3
-         Print #3 , "FOUND FIRST BLACK LINE"
-         Print "FOUND FIRST BLACK LINE"
+         Print #3 , "FOUND FIRST BLACK LINE"                'WHEN IT GOES TO EAST DIRECTION
+         Print "FOUND FIRST BLACK LINE"                     'IT SIMPLY CHECHS FOR BLACK LINES ON THE FLOOR
+                                                            'WHEN IT DETECTS ONE THIS MEANS THAT IT HAS REACHED THE END TO EAST DIRECTION
 
-
-         Gosub Closeservo
+         Gosub Closeservo                                   'IT TURNS THE HEAD TO HOME POSITION AGAIN
          Point1 = 0
          Pos = 60
          Gosub Vertical_set
          Gosub Horizontal_home
          Gosub Vertical_home
-         For I = 1 To 80                                    '*******************    FOUND FIRST BLACK LINE    **************
+         For I = 1 To 80
             Rwheel = Speed
             Lwheel = Speed + 100
             Gosub Robot_reverse
@@ -480,7 +482,7 @@ Moterakia:
 
       Tnorth:
 
-         While Ping.0 = 0 And Ping.2 = 0                             '*****     RUN FORWARD EAST   UNTIL SECOND BLACK LINE   *****
+         While Ping.0 = 0 And Ping.2 = 0                    '*****     RUN FORWARD EAST   UNTIL SECOND BLACK LINE   *****
             Rwheel = Speed
             Lwheel = Speed + 100
             Gosub Robot_reverse
@@ -500,18 +502,18 @@ Moterakia:
          Rwheel = 130
          Lwheel = 130
 
-         While Angle > Angle1                                     '*****************      TURN NORTH      ******************
+         While Angle > Angle1                               '*****************      TURN NORTH      ******************
             Gosub Angles
             Gosub Robot_left
          Wend
-         Gosub Robot_stop
+         Gosub Robot_stop                                   'CHECK FOR THE CORRECT NORTH ANGLE
          Gosub Check_dir
 
       Goingnorth:
 
          Print #3 , "GOING NORTH"
          Print "GOING NORTH"
-         While Pinl.6 = 1                                           '*****************      GOING NORTH      ******************
+         While Pinl.6 = 1                                   '*****************      GOING NORTH      ******************
             Rwheel = Speed+50
             Lwheel = Speed + 100
             Sos2:
@@ -527,22 +529,22 @@ Moterakia:
 
                End If
             Sos3:
-               If Ping.0 < Ping.2 Then
+               If Ping.0 < Ping.2 Then                      'HERE WE HAVE THE PROBLEM TO TARGET THE ROBOT AT A SPECIFIC POINT
 
-                  Lwheel = 200
-                  Rwheel = 200
-                  Gosub Robot_right
+                  Lwheel = 200                              'SO WE HAVE 2 BLACK DETECTORS TRYING TO PUT THE ROBOT
+                  Rwheel = 200                              'AT A SPECIFIC DIRECTION AND POSITION
+                  Gosub Robot_right                         'IT STARTS DETECTING A TRIANGLE WHOSE TOP IS LOCATED AT THE CORRECT POINT
                   Waitms 15
-                  Gosub Robot_stop
+                  Gosub Robot_stop                          'FINALY WE HAVE A BLACK DIRECTION LINE SO AS TO GUIDE THE ROBOT
                   Waitms 15
-                  Goto Sos3
+                  Goto Sos3                                 'AT THE EXACT DIRECTION AND POSITION
                End If
-
-               Gosub Robot_reverse
-               Waitms 5
-               Gosub Robot_stop
-               Waitms 30
-         Wend
+                                                            'WE HAVE TO DO THIS BECAUSE AT THE TARGET POSITION IS EXISTED
+               Gosub Robot_reverse                          'THE COLLISION OF THE 2 BUTTONS
+               Waitms 5                                     'ONE BUTTON OF THE ROBOT MEANING THE END OF COLLECTION
+               Gosub Robot_stop                             'AND THE OTHER ONE THE STARTING BUTTON OF THE LEGO ROBOT
+               Waitms 30                                    'WHEN THIS IS PRESED THE LEGO MINDSTORMS ROBOT STARTS
+         Wend                                               'TO TAKE THE BASKET AND REPLACE IT WITH A NEW ONE
          Print #3 , "BACK TO HOME"
          Print "BACK TO HOME"
          For I = 1 To 5                                             '******************    5 STEPS FORWARD      ********************
@@ -571,7 +573,7 @@ Moterakia:
    Loop
 
 
-'***************************************TEST AREA
+
 
 
 '**************************************
@@ -583,8 +585,8 @@ Moterakia:
 Elexe2:
    Reset Porte.3                                            'STOP LASER
    For K = 1 To 33                                          'LOCATE TARGET  GOING FORWARD
-
-
+                                                            'THIS ROUTINE CHECKS IF IT HAS FOUND THE CORRECT TARGET
+                                                            'FOR THE REVERCE GOING SCANS
       Rwheel = Speed
       Lwheel = Speed + 100
       Gosub Robot_reverse
@@ -594,13 +596,13 @@ Elexe2:
    Next K
 
 
-   Gosub Openservo
+   Gosub Openservo                                          '     OPEN COLLECTOR FINGERS
    Waitms 200
-   Gosub Head_home
-   Gosub Read_colors
+   Gosub Head_home                                          'PUT HEAD AT HOME POSITION  ALL BACK
+   Gosub Read_colors                                        'CHECK IF IT HAS BEEN FOUND
    Vpoint = 0
 
-Gup3:
+Gup3:                                                       'GO UP ONE STEP
    Gosub Liftup
    If Vpoint > 100 Then Goto Fail2                          'NOT FOUND'
    Gosub Read_colors
@@ -617,9 +619,9 @@ Going_up2:
    End If
 
 
-   For I = 1 To 10
-      Gosub Rightturn
-      Gosub Liftup
+   For I = 1 To 10                                          'SOMETHING FOUNT
+      Gosub Rightturn                                       'START SCANNING HORIZONTALY
+      Gosub Liftup                                          'AND VERTICALY
    Next I
 
 Gup4:
@@ -642,31 +644,31 @@ Going_left1:
    Test1 = Blue - Red
    If Test1 < 55 Then Goto Fail2
 
-   For I = 1 To 5
+   For I = 1 To 5                                           'FOUND AT LAST
       Gosub Liftup
    Next I
 
 
 
    Point = 0
-   Gosub Head_go
-   For K1 = 1 To 500
+   Gosub Head_go                                            'HEAD GOING FORWARD
+   For K1 = 1 To 500                                        'UNTIL IT REACHES THE TARGET
       Waitms 10
       If Pinb.2 = 0 Then Incr Point
       If Point > 20 Then Goto Getit1
    Next K1
 Getit1:
-   Gosub Head_stop
+   Gosub Head_stop                                          'GET THE FRUIT
    Waitms 200
    Gosub Closeservo
    Waitms 200
-   Gosub Head_home
+   Gosub Head_home                                          'TURN AT HOME POSITION
    Gosub Head_stop
    Waitms 200
    Pos = 60
    Gosub Vertical_set
    Pos = 80
-   Gosub Horizontal_set
+   Gosub Horizontal_set                                     'RELEASE THE FRUIT IN THE BASKET
    Gosub Openservo
    Waitms 200
 Fail2:
@@ -676,7 +678,7 @@ Fail2:
 Return
 
 
-Elexe:
+Elexe:                                                      'THE SAME RUTINES FOR GOING FORWARD
    Reset Porte.3                                            'STOP LASER
    For K = 1 To 40                                          'LOCATE TARGET  GOING FORWARD
       Rwheel = Speed
@@ -813,7 +815,7 @@ Get_char:
 Return
 
 Check_dir:
-   Gosub Angles
+   Gosub Angles                                             'CHECKS IF THE ROBOT IS RUNNING IN THE CORRECT DIRECTION
    If Angle > Angle1 Then
       Rwheel = 250
       Lwheel = 250
@@ -834,17 +836,17 @@ Return
 
 Angles:
 'Enable Interrupts
-   Put #1 , &H31
+   Put #1 , &H31                                            'CHECKS THE KEYBOARD
 
    Waitms 20
-   For Ii = 1 To 8
+   For Ii = 1 To 8                                          'AND THE BLUETOOTH
       Comp(ii) = Inkey(#1)
       Comp(ii) = Comp(ii) - 48
  'Print ii ; "  " ; Comp(i)
       Waitms 10
    Next Ii
 
-   Angle = Comp(3) * 100
+   Angle = Comp(3) * 100                                    'READ ANGLE FROM COMPASS
    Comp(4) = Comp(4) * 10
    Angle = Angle + Comp(4)
    Angle = Angle + Comp(5)
@@ -858,8 +860,8 @@ Return
 Mismes:
    Gosub Diavase_red
    Gosub Check_red
-   If Flag1 > 0 Then Incr Point1                   'MISTAKEN MEASURES'
-   If Point1 > 50 Then
+   If Flag1 > 0 Then Incr Point1                            'MISTAKEN MEASURES'
+   If Point1 > 50 Then                                      'SOMETHING WENT WRONG AND WE HAVE TO RESET THE POINTER
       Point1 = 0
       Flag1 = 0
    End If
@@ -868,11 +870,11 @@ Return
 
 Diavase_red:
 
-   Pulsein W , Pinc , 4 , 0
+   Pulsein W , Pinc , 4 , 0                                 'READ THE READ SENSOR
    If Length > 500 Then Return
    If W > 2000 Then
-      Color2 = Color2 * Length
-      Color2 = Color2 + W
+      Color2 = Color2 * Length                              'IF IT IS IN THE CORRECT REGION
+      Color2 = Color2 + W                                   'MEASURE IT
       Incr Length
       Color2 = Color2 / Length
 
@@ -885,7 +887,7 @@ Return
 Check_red:
    'Print W
    If W > 500 Then
-      Temps = Color2 / Factor
+      Temps = Color2 / Factor                               'IF THE RED IS CORRECT SAVE IT
    'Print W ; "   " ; Temp1
       Ws = W
       If Ws < Temps Then Incr Flag1
@@ -894,7 +896,7 @@ Return
 
 Read_colors:
    S2 = 0
-   S3 = 0
+   S3 = 0                                                   'READ THE RGB SENSOR
    Pulsein Red , Pinc , 2 , 0
    Print "red  " ; Red ; "  ";
    Waitms 10
@@ -909,9 +911,9 @@ Read_colors:
    Print "blue  " ; Blue ; "  "
    Waitms 10
 Return
-
 Robot_reverse:
    Pwm0a = 0 : Pwm0b = Lwheel : Pwm2a = Rwheel : Pwm2b = 0
+                                                              'MOVING SUBS
 Return
 
 Robot_stop:
@@ -931,7 +933,7 @@ Robot_left:
 Return
 
 Vertical_set:
-   If Pos > Ypos Then
+   If Pos > Ypos Then                                       'PUT HEAD IN CORRECT VERTICAL POSITION
       Pos = Pos - Ypos
       For Pos1 = 1 To Pos
          Gosub Liftup
@@ -946,7 +948,7 @@ Vertical_set:
 Return
 
 Horizontal_home:
-   While Pinb.0 = 1
+   While Pinb.0 = 1                                         'PUT THE HEAD IN THE CORRECT HORIZONTAL POSITION
       Gosub Rightturn
    Wend
    Xpos = 0
@@ -969,7 +971,7 @@ Return
 
 Vertical_home:
 
-   While Pinb.3 = 1
+   While Pinb.3 = 1                                         'PUT THE HEAD IN THE LOWEST AVAILABLE POSITION
       Gosub Liftdown
    Wend
    Ypos = 0
@@ -978,7 +980,7 @@ Return
 
 
 Head_home:
-   For K = 1 To 5
+   For K = 1 To 5                                           'PULL THE HEAD BACK
       Gosub Head_back
       While Pinl.1 = 1
          'Print Pinl.1
@@ -991,13 +993,13 @@ Return
 
 
 Head_go:
-   X = 220
+   X = 220                                                  'HEAD RUNNING FORWART TO THE FRUIT
    Set Portl.3
    Waitms 20
    Pwm0a = 0 : Pwm0b = X : Pwm2a = 0 : Pwm2b = 0
 Return
 Head_back:
-   X = 180
+   X = 180                                                  'HEAD RETURNING
    Set Portl.3
    Waitms 30
    Pwm0a = 0 : Pwm0b = 0 : Pwm2a = 0 : Pwm2b = X
@@ -1009,10 +1011,10 @@ Head_stop:
 Return
 
 Closeservo:
-   Pulsewidth = 4000
+   Pulsewidth = 4000                                        'CLOSE FINGERS
    Goto Servo1
 Openservo:
-   Pulsewidth = 8300
+   Pulsewidth = 8300                                        'OPEN FINGERS
 Servo1:
    For I = 0 To 20                                          'Generate a 20-pulse pulsestream
       Pulseout Portb , 1 , Pulsewidth                       'Control servo
@@ -1022,7 +1024,7 @@ Return
 
 Rightturn:
 
-   Set Porta.0
+   Set Porta.0                                              'STEPPER MOTOR CONTROLLERS
    Waitms 10
    Reset Porta.0
    Waitms 10
